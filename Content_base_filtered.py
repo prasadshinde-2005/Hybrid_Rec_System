@@ -43,7 +43,7 @@ def train_transformer(data):
         ("tfidf", TfidfVectorizer(max_features=85), tfidf_col),
         ("standard_scale", StandardScaler(), standard_scale_cols),
         ("min_max_scale", MinMaxScaler(), min_max_scale_cols)
-    ],remainder='passthrough',n_jobs=-1,force_int_remainder_cols=False)
+    ],remainder='passthrough',n_jobs=-1)
 
     # fit the transformer
     transformer.fit(data)
