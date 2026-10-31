@@ -1,13 +1,12 @@
 from contextlib import asynccontextmanager
 from typing import Literal
-
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from numpy import load
 from pydantic import BaseModel, Field
 from scipy.sparse import load_npz
 
-from content_based_filtering import content_recommendation
+from Content_base_filtered import content_recommendation
 from hybrid_recommendations import HybridRecommenderSystem
 
 # Holds all data loaded once at startup (shared by every request)
