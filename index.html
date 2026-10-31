@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spinoff – find songs that sound like your song</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#120C22; --plum:#1D1336; --plum-2:#2A1D4A; --line:#3A2B63;
+  --mist:#EEE9FF; --dim:#A99ECF; --coral:#FF5E8A; --amber:#FFC24D;
+  color-scheme: dark;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:"DM Sans",system-ui,sans-serif; color:var(--mist); line-height:1.5;
+  background:
+    radial-gradient(900px 500px at 85% -10%, rgba(255,94,138,.18), transparent 60%),
+    radial-gradient(700px 500px at -10% 110%, rgba(255,194,77,.10), transparent 60%),
+    var(--ink);
+  min-height:100vh;
+}
+h1,h2,h3{font-family:"Bricolage Grotesque",sans-serif;line-height:1.05}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+.layout{max-width:1160px;margin:0 auto;padding:48px 24px 80px;display:grid;grid-template-columns:400px 1fr;gap:56px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:1fr;gap:36px;padding:28px 18px 64px}}
+
+/* ---------- left: the record + form ---------- */
+.panel{position:sticky;top:32px}
+@media (max-width:900px){.panel{position:static}}
+.brand{display:flex;align-items:center;gap:14px;margin-bottom:28px}
+.record{
+  width:92px;height:92px;border-radius:50%;flex:none;position:relative;
+  background:repeating-radial-gradient(circle at 50% 50%, #0b0716 0 2px, #1a1230 2px 4px);
+  box-shadow:0 10px 30px rgba(0,0,0,.5), inset 0 0 0 2px #2b1f4d;
+}
+.record::before{ /* light sheen */
+  content:"";position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 20deg, transparent 0 20%, rgba(255,255,255,.12) 25%, transparent 32% 70%, rgba(255,255,255,.1) 75%, transparent 82%);
+}
+.record::after{ /* label */
+  content:"";position:absolute;inset:32px;border-radius:50%;
+  background:radial-gradient(circle at 50% 50%, var(--ink) 0 4px, var(--coral) 5px);
+}
+.record.spin{animation:spin 2.6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.brand b{font:800 1.9rem "Bricolage Grotesque",sans-serif;letter-spacing:-.02em}
+
+.panel h1{font-size:2.7rem;font-weight:800;letter-spacing:-.03em;margin-bottom:12px}
+.panel p.lede{color:var(--dim);max-width:34ch;margin-bottom:28px}
+
+form{display:grid;gap:16px}
+label{display:block;font-weight:700;font-size:.9rem;margin-bottom:6px}
+.field{position:relative}
+input[type=text]{
+  width:100%;padding:13px 15px;border-radius:12px;border:1.5px solid var(--line);
+  background:var(--plum);color:var(--mist);font:inherit;transition:border-color .15s, background .15s;
+}
+input[type=text]::placeholder{color:#7d70a8}
+input[type=text]:focus{outline:none;border-color:var(--coral);background:var(--plum-2)}
+.suggest{
+  position:absolute;z-index:5;left:0;right:0;top:calc(100% + 6px);background:var(--plum-2);
+  border:1.5px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.5);
+}
+.suggest button{
+  display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:0;color:inherit;font:inherit;cursor:pointer;
+}
+.suggest button:hover,.suggest button:focus-visible{background:var(--line)}
+.suggest small{color:var(--dim);display:block}
+
+.row{display:grid;grid-template-columns:1fr;gap:16px}
+select{
+  width:100%;padding:13px 15px;border-radius:12px;border:1.5px solid var(--line);background:var(--plum);color:var(--mist);font:inherit;
+}
+
+/* diversity (hybrid only) */
+.mix{border:1.5px solid var(--line);border-radius:14px;padding:16px;background:var(--plum)}
+.mix[hidden]{display:none}
+.mix header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.mix header span{font-size:.85rem;color:var(--amber)}
+.mix p{font-size:.85rem;color:var(--dim);margin-bottom:12px}
+input[type=range]{width:100%;accent-color:var(--coral)}
+.ratio{display:flex;height:12px;border-radius:8px;overflow:hidden;margin-top:12px;background:var(--line)}
+.ratio i{display:block;height:100%;transition:width .2s}
+.ratio .p{background:var(--coral)} .ratio .d{background:var(--amber)}
+.legend{display:flex;justify-content:space-between;font-size:.8rem;margin-top:6px;color:var(--dim)}
+
+.go{
+  padding:15px 20px;border:0;border-radius:12px;background:var(--coral);color:#2A0A18;
+  font:700 1.05rem "DM Sans",sans-serif;cursor:pointer;transition:transform .12s, filter .12s;
+}
+.go:hover{filter:brightness(1.08)} .go:active{transform:scale(.98)} .go:disabled{opacity:.6;cursor:wait}
+
+/* ---------- right: results ---------- */
+.empty{
+  border:1.5px dashed var(--line);border-radius:20px;padding:56px 32px;color:var(--dim);
+}
+.empty h2{color:var(--mist);font-size:1.7rem;margin-bottom:8px}
+.error{border:1.5px solid var(--coral);border-radius:16px;padding:20px 22px;background:rgba(255,94,138,.08)}
+.error b{display:block;margin-bottom:4px}
+
+.engine{display:inline-block;font-size:.85rem;border:1.5px solid var(--line);border-radius:99px;padding:3px 12px;color:var(--dim);margin-bottom:20px}
+.engine.hybrid{border-color:var(--amber);color:var(--amber)}
+
+.now{
+  display:grid;grid-template-columns:150px 1fr;gap:24px;align-items:center;
+  padding:22px;border-radius:24px;background:linear-gradient(135deg,var(--plum-2),var(--plum));
+  border:1.5px solid var(--line);margin-bottom:36px;
+}
+@media (max-width:560px){.now{grid-template-columns:1fr}}
+.art{border-radius:14px;aspect-ratio:1;display:grid;place-items:center;font:800 2.4rem "Bricolage Grotesque",sans-serif;color:rgba(255,255,255,.9);text-shadow:0 2px 12px rgba(0,0,0,.35)}
+.now .art{width:150px;border-radius:50%;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+@media (max-width:560px){.now .art{width:120px}}
+.now h2{font-size:2rem;font-weight:800;letter-spacing:-.02em}
+.now p{color:var(--dim);margin:4px 0 14px}
+.label{font-size:.9rem;font-weight:700;color:var(--amber);margin-bottom:8px}
+
+h3.queue{font-size:1.4rem;margin-bottom:12px}
+ol{list-style:none;padding:0;display:grid;gap:8px}
+.track{
+  display:grid;grid-template-columns:28px 52px 1fr auto;gap:14px;align-items:center;
+  padding:10px 14px 10px 10px;border-radius:14px;border:1.5px solid transparent;transition:background .15s,border-color .15s;
+}
+.track:hover{background:var(--plum)}
+.track.playing{background:var(--plum-2);border-color:var(--coral)}
+.track .n{color:var(--dim);text-align:center;font-variant-numeric:tabular-nums}
+.track .art{width:52px;font-size:1.1rem;border-radius:10px}
+.track h4{font-size:1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track p{font-size:.88rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track .meta{min-width:0}
+
+.play{
+  display:inline-flex;align-items:center;gap:8px;border:0;border-radius:99px;cursor:pointer;
+  background:var(--mist);color:var(--ink);font:700 .9rem "DM Sans",sans-serif;padding:9px 16px;
+}
+.play:hover{background:#fff}
+.play[disabled]{background:var(--line);color:var(--dim);cursor:not-allowed}
+.track .play{padding:9px 12px}
+.bar{height:4px;border-radius:4px;background:var(--line);margin-top:14px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--coral)}
+
+.skeleton{height:68px;border-radius:14px;background:linear-gradient(90deg,var(--plum) 25%,var(--plum-2) 50%,var(--plum) 75%);background-size:200% 100%;animation:sh 1.2s infinite;margin-bottom:8px}
+@keyframes sh{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.record.spin,.skeleton{animation:none}}
+</style>
+</head>
+<body>
+<main class="layout">
+
+  <!-- Left: form -->
+  <section class="panel">
+    <div class="brand"><div class="record" id="record"></div><b>Spinoff</b></div>
+    <h1>Hear a song you love? Get ten more.</h1>
+    <p class="lede">Type a song and its artist. We’ll build a queue of tracks that sound like it.</p>
+
+    <form id="form" autocomplete="off">
+      <div class="field">
+        <label for="song">Song name</label>
+        <input type="text" id="song" placeholder="e.g. Shape of You" required>
+        <div class="suggest" id="suggest" hidden></div>
+      </div>
+      <div class="field">
+        <label for="artist">Artist name</label>
+        <input type="text" id="artist" placeholder="e.g. Ed Sheeran" required>
+      </div>
+      <div>
+        <label for="k">How many recommendations?</label>
+        <select id="k"><option>5</option><option selected>10</option><option>15</option><option>20</option></select>
+      </div>
+
+      <div class="mix" id="mix" hidden>
+        <header><label for="div" style="margin:0">Mix of familiar and new</label><span id="mixLabel">5 / 5</span></header>
+        <p>Slide toward “Diverse” for more surprises.</p>
+        <input type="range" id="div" min="1" max="9" step="1" value="5">
+        <div class="ratio"><i class="p" id="rp" style="width:50%"></i><i class="d" id="rd" style="width:50%"></i></div>
+        <div class="legend"><span>Personalized</span><span>Diverse</span></div>
+      </div>
+
+      <button class="go" id="go" type="submit">Get recommendations</button>
+    </form>
+  </section>
+
+  <!-- Right: results -->
+  <section id="out" aria-live="polite">
+    <div class="empty">
+      <h2>Your queue starts here</h2>
+      <p>Enter a song on the left and press “Get recommendations”. Pick from the suggestions to fill in the artist for you.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const song = $('song'), artist = $('artist'), out = $('out'), record = $('record');
+let audio = null, playingBtn = null;
+
+/* ---------- helpers ---------- */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function artStyle(text){ // deterministic gradient per track
+  let h = 0; for (const c of text) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return `background:linear-gradient(135deg,hsl(${h} 75% 58%),hsl(${(h+55)%360} 70% 38%))`;
+}
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+/* ---------- autocomplete ---------- */
+const box = $('suggest');
+const fetchSuggest = debounce(async () => {
+  const q = song.value.trim();
+  if (q.length < 2) { box.hidden = true; return; }
+  try {
+    const items = await (await fetch('/api/suggest?q=' + encodeURIComponent(q))).json();
+    box.innerHTML = items.map((s, i) =>
+      `<button type="button" data-i="${i}">${esc(s.name)}<small>${esc(s.artist)}</small></button>`).join('');
+    box.hidden = !items.length;
+    box.querySelectorAll('button').forEach(b => b.onclick = () => {
+      const s = items[b.dataset.i]; song.value = s.name; artist.value = s.artist; box.hidden = true; checkEngine();
+    });
+  } catch { box.hidden = true; }
+}, 250);
+song.addEventListener('input', fetchSuggest);
+document.addEventListener('click', e => { if (!box.contains(e.target) && e.target !== song) box.hidden = true; });
+
+/* ---------- show the diversity slider only for the hybrid engine ---------- */
+const checkEngine = debounce(async () => {
+  if (!song.value.trim() || !artist.value.trim()) { $('mix').hidden = true; return; }
+  try {
+    const q = new URLSearchParams({ song_name: song.value, artist_name: artist.value });
+    const r = await (await fetch('/api/check?' + q)).json();
+    $('mix').hidden = !r.hybrid;
+  } catch { $('mix').hidden = true; }
+}, 350);
+song.addEventListener('input', checkEngine); artist.addEventListener('input', checkEngine);
+
+$('div').addEventListener('input', e => {
+  const d = +e.target.value;
+  $('rp').style.width = (10 - d) * 10 + '%'; $('rd').style.width = d * 10 + '%';
+  $('mixLabel').textContent = `${10 - d} / ${d}`;
+});
+
+/* ---------- audio ---------- */
+function stopAudio(){
+  if (audio) { audio.pause(); audio = null; }
+  if (playingBtn) {
+    playingBtn.closest('[data-row]')?.classList.remove('playing');
+    playingBtn.firstElementChild.textContent = '▶';
+    const bar = playingBtn.closest('[data-row]')?.querySelector('.bar i'); if (bar) bar.style.width = '0';
+    playingBtn = null;
+  }
+  record.classList.remove('spin');
+}
+function toggle(btn){
+  if (playingBtn === btn) return stopAudio();
+  stopAudio();
+  audio = new Audio(btn.dataset.url);
+  playingBtn = btn;
+  btn.firstElementChild.textContent = '❚❚';
+  btn.closest('[data-row]').classList.add('playing');
+  record.classList.add('spin');
+  audio.play().catch(stopAudio);
+  audio.ontimeupdate = () => {
+    const bar = btn.closest('[data-row]')?.querySelector('.bar i');
+    if (bar && audio) bar.style.width = (audio.currentTime / (audio.duration || 30) * 100) + '%';
+  };
+  audio.onended = stopAudio;
+}
+
+/* ---------- render ---------- */
+const playBtn = (t, label) => t.spotify_preview_url
+  ? `<button class="play" data-url="${esc(t.spotify_preview_url)}" aria-label="Play ${esc(t.name)}"><span>▶</span>${label}</button>`
+  : `<button class="play" disabled>No preview</button>`;
+
+function render(data, k){
+  const [first, ...rest] = data.results;
+  const engine = data.engine === 'hybrid'
+    ? '<span class="engine hybrid">Hybrid: content + listener behaviour</span>'
+    : '<span class="engine">Content-based: matched by sound</span>';
+  out.innerHTML = `
+    ${engine}
+    <div class="now" data-row>
+      <div class="art" style="${artStyle(first.name + first.artist)}">${esc(first.name[0] || '♪')}</div>
+      <div>
+        <div class="label">Currently playing</div>
+        <h2>${esc(first.name)}</h2>
+        <p>${esc(first.artist)}</p>
+        ${playBtn(first, 'Play preview')}
+        <div class="bar"><i></i></div>
+      </div>
+    </div>
+    <h3 class="queue">Next up</h3>
+    <ol>${rest.map((t, i) => `
+      <li class="track" data-row>
+        <span class="n">${i + 1}</span>
+        <div class="art" style="${artStyle(t.name + t.artist)}">${esc(t.name[0] || '♪')}</div>
+        <div class="meta"><h4>${esc(t.name)}</h4><p>${esc(t.artist)}</p><div class="bar"><i></i></div></div>
+        ${playBtn(t, 'Play')}
+      </li>`).join('')}</ol>`;
+  out.querySelectorAll('.play[data-url]').forEach(b => b.onclick = () => toggle(b));
+}
+
+const skeleton = () => out.innerHTML = '<div class="skeleton" style="height:190px;border-radius:24px;margin-bottom:36px"></div>' + '<div class="skeleton"></div>'.repeat(5);
+
+/* ---------- submit ---------- */
+$('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  stopAudio(); box.hidden = true;
+  const btn = $('go'); btn.disabled = true; btn.textContent = 'Finding songs…';
+  record.classList.add('spin'); skeleton();
+  try {
+    const res = await fetch('/api/recommend', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        song_name: song.value, artist_name: artist.value,
+        k: +$('k').value, diversity: +$('div').value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Something went wrong.');
+    render(data);
+  } catch (err) {
+    out.innerHTML = `<div class="error"><b>No recommendations yet</b>${esc(err.message)} Check the spelling, or pick a song from the suggestions.</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Get recommendations';
+    if (!audio) record.classList.remove('spin');
+  }
+});
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@ stages:
     - data_cleaning.py
     outs:
     - data/cleaned_data.csv
-  transform_data:
+  Content_base_filtered_data:
     cmd: python Content_base_filtered.py
     deps:
     - content_base_filtered.py
@@ -26,3 +26,10 @@ stages:
     - data/collab_filtered_data.csv
     - data/interaction_matrix.npz
     - data/track_ids.npy
+  transformed_filtered_data:
+    cmd: python transformed_filtered_data.py
+    deps:
+    - data/collab_filtered_data.csv
+    - transformed_filtered_data.py
+    outs:
+    - data/transformed_hybrid_data.npz
