@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎵 Pink Song Recommender</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Floating Music Notes Background -->
+  <div class="music-notes" id="musicNotes"></div>
+
+  <div class="container">
+    <header>
+      <h1>🎵 Song Recommender</h1>
+      <p class="subtitle">Enter a song and artist to get recommendations</p>
+    </header>
+
+    <section class="form">
+      <div class="field">
+        <label for="songName">Song name</label>
+        <input type="text" id="songName" placeholder="e.g. blinding lights" />
+      </div>
+
+      <div class="field">
+        <label for="artistName">Artist name</label>
+        <input type="text" id="artistName" placeholder="e.g. the weeknd" />
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="k">Number of recommendations</label>
+          <select id="k">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+
+        <div class="field" id="diversityField" style="display:none;">
+          <label for="diversity">
+            Diversity: <span id="diversityValue">5</span>
+            <small>(1 = personalized, 9 = diverse)</small>
+          </label>
+          <input type="range" id="diversity" min="1" max="9" value="5" />
+          <div class="bar-chart">
+            <div class="bar personalized" id="barPersonalized"></div>
+            <div class="bar diverse" id="barDiverse"></div>
+          </div>
+          <div class="bar-labels">
+            <span>Personalized</span>
+            <span>Diverse</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="recommendBtn">Get Recommendations</button>
+    </section>
+
+    <div id="status"></div>
+    <div id="results"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
